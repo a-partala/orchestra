@@ -1,0 +1,6 @@
+[submodule "services/user-service"]
+	path = services/user-service
+	url = https://github.com/a-partala/user-service.git
+[submodule "services/task-service"]
+	path = services/task-service
+	url = https://github.com/a-partala/task-service.git
