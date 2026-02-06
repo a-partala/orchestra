@@ -1,17 +1,20 @@
 services:
-
+  # --- Databases ---
   user-postgres:
     image: postgres:15
     container_name: user-postgres
     environment:
-      POSTGRES_DB: user_db
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      - PGTZ=${APP_TIMEZONE}
+      - POSTGRES_DB=user_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d user_db"]
       interval: 5s
       timeout: 5s
       retries: 5
+    ports:
+      - "5433:5432"
     volumes:
       - user_db_data:/var/lib/postgresql/data
     networks:
@@ -21,19 +24,23 @@ services:
     image: postgres:15
     container_name: task-postgres
     environment:
-      POSTGRES_DB: task_db
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      - PGTZ=${APP_TIMEZONE}
+      - POSTGRES_DB=task_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d task_db"]
       interval: 5s
       timeout: 5s
       retries: 5
+    ports:
+      - "5434:5432"
     volumes:
       - task_db_data:/var/lib/postgresql/data
     networks:
       - backend-net
 
+  # --- Microservices ---
   user-service:
     build:
       context: ./services/user-service
@@ -42,11 +49,13 @@ services:
       - "8081:8081"
       - "5005:5005"
     environment:
+      - TZ=${APP_TIMEZONE}
       - DB_HOST=user-postgres
       - DB_NAME=user_db
       - DB_USER=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION_MINUTES=${JWT_EXPIRATION_MINUTES}
       - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     depends_on:
       user-postgres:
@@ -62,11 +71,13 @@ services:
       - "8082:8082"
       - "5006:5006"
     environment:
+      - TZ=${APP_TIMEZONE}
       - DB_HOST=task-postgres
       - DB_NAME=task_db
       - DB_USER=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION_MINUTES=${JWT_EXPIRATION_MINUTES}
       - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006
     depends_on:
       task-postgres:
