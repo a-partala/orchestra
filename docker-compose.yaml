@@ -1,40 +1,82 @@
 services:
-  db:
+  db-user:
     image: postgres:15
+    container_name: db-user
     environment:
+      POSTGRES_DB: user_db
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d user_db"]
       interval: 5s
       timeout: 5s
       retries: 5
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    networks:
+      - backend-net
+
+  db-task:
+    image: postgres:15
+    container_name: db-task
+    environment:
+      POSTGRES_DB: task_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d task_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - task_db_data:/var/lib/postgresql/data
+    networks:
+      - backend-net
 
   user-service:
     build:
       context: ./services/user-service
+    container_name: user-service
+    ports:
+      - "8081:8081"
+      - "5005:5005"
     environment:
-      DB_HOST: db
-      DB_NAME: user_db
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
+      - DB_HOST=user-postgres
+      - DB_NAME=user_db
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     depends_on:
-      db:
+      db-user:
         condition: service_healthy
+    networks:
+      - backend-net
 
   task-service:
     build:
       context: ./services/task-service
+    container_name: task-service
+    ports:
+      - "8082:8082"
+      - "5006:5006"
     environment:
-      DB_HOST: db
-      DB_NAME: task_db
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
+      - DB_HOST=task-postgres
+      - DB_NAME=task_db
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006
     depends_on:
-      db:
+      db-task:
         condition: service_healthy
+    networks:
+      - backend-net
+
+networks:
+  backend-net:
+    driver: bridge
+
+volumes:
+  user_db_data:
+  task_db_data:
