@@ -1,8 +1,9 @@
 # Orchestra
-The central hub for managing and deploying [a-partala](https://github.com/a-partala) microservices ecosystem.
+
+The central hub for managing and deploying the **[a-partala](https://github.com/a-partala)** microservices ecosystem.
 
 ## Overview
-Orchestra is a coordination repository that uses Git Submodules to pull together independent services. It provides a unified Docker infrastructure, shared networking, and environment configuration for the entire system.
+Orchestra is a coordination repository that uses **Git Submodules** to unify independent services. It provides a consistent Docker infrastructure, shared networking (service discovery), and centralized environment configuration.
 
 ## Quick Start
 ```bash
@@ -19,7 +20,9 @@ cp .env.example .env
 docker-compose up --build
 ```
 
-## Service Map
-[Task](https://github.com/a-partala/task-service.git)
+## Services Map
 
-[User](https://github.com/a-partala/user-service.git)
+| Service         | Main Port | Debug Port | DB Port | Description                                                                     | Repository                                        |
+|:----------------|:----------|:-----------|:--------|:--------------------------------------------------------------------------------|:--------------------------------------------------|
+| **User**        | `:8081`   | `:5005`    | `:5433` | **Identity Provider**. Issues JWT, handles Email Verification & User lifecycle. | [Link](https://github.com/a-partala/user-service) |
+| **Task**        | `:8082`   | `:5006`    | `:5434` | **Resource Server**. Stateless authorization based on User identity.            | [Link](https://github.com/a-partala/task-service) |
